@@ -1,0 +1,29 @@
+{
+  "name": "notion2web-starter",
+  "version": "1.0.0",
+  "description": "A framework to automatically sync Notion databases to a Hugo static site with Cloudflare R2 image hosting.",
+  "author": "HUMANERD",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "hugo": "hugo",
+    "build:css": "npx tailwindcss -i ./assets/css/main.css -o ./static/css/main.css",
+    "sync": "node scripts/notion-to-hugo.js",
+    "build": "npm run build:css && hugo --minify",
+    "dev": "npm run sync && npm run build:css && hugo server"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "node-fetch": "^2.7.0",
+    "@notionhq/client": "^2.2.15",
+    "@aws-sdk/client-s3": "^3.525.0"
+  },
+  "devDependencies": {
+    "hugo-extended": "^0.158.0",
+    "tailwindcss": "^3.4.1",
+    "postcss": "^8.4.35",
+    "postcss-cli": "^11.0.0",
+    "autoprefixer": "^10.4.17",
+    "@tailwindcss/typography": "^0.5.10"
+  }
+}

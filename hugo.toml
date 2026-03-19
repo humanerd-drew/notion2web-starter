@@ -1,0 +1,29 @@
+baseURL = 'https://example.com/'
+languageCode = 'ko-kr'  # Change to en-us or your preferred language code
+title = 'Notion2Web Starter'
+theme = []
+enableRobotsTXT = true
+
+[sitemap]
+  changefreq = 'weekly'
+  priority = 0.5
+  filename = 'sitemap.xml'
+
+[params]
+  description = 'A static site generated from Notion using Notion2Web Starter.'
+
+  # Search Engine Optimization (SEO) - Site Ownership Verification IDs
+  [params.seo]
+    google_site_verification = 'YOUR_GOOGLE_SITE_VERIFICATION'
+    naver_site_verification = 'YOUR_NAVER_SITE_VERIFICATION'
+
+  # Analytics Tools - Tracking IDs
+  [params.analytics]
+    google_analytics_id = 'YOUR_GA4_ID'
+    clarity_id = 'YOUR_CLARITY_ID'
+
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true # To allow HTML classes in markdown

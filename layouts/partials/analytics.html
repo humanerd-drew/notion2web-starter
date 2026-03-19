@@ -1,0 +1,88 @@
+{{- /* Google Search Console */ -}}
+{{ with .Site.Params.seo.google_site_verification }}
+<meta name="google-site-verification" content="{{ . }}" />
+{{ end }}
+
+{{- /* Naver Search Advisor */ -}}
+{{ with .Site.Params.seo.naver_site_verification }}
+<meta name="naver-site-verification" content="{{ . }}" />
+{{ end }}
+
+{{- /* Bing Webmaster Tools */ -}}
+{{ with .Site.Params.seo.bing_site_verification }}
+<meta name="msvalidate.01" content="{{ . }}" />
+{{ end }}
+
+{{- /* Google Analytics (GA4) */ -}}
+{{ with .Site.Params.analytics.google_analytics_id }}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ . }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '{{ . }}');
+</script>
+{{ end }}
+
+{{- /* Microsoft Clarity */ -}}
+{{ with .Site.Params.analytics.clarity_id }}
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "{{ . }}");
+</script>
+{{ end }}
+
+{{- /* PostHog (Optional - can be enabled in hugo.toml) */ -}}
+{{ with .Site.Params.analytics.posthog_id }}
+<script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}p=t.createElement("script"),p.type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('{{ . }}', {api_host:'https://app.posthog.com'})
+</script>
+{{ end }}
+
+{{- /* Channel.io (Optional - can be enabled in hugo.toml) */ -}}
+{{ with .Site.Params.analytics.channel_io_id }}
+<script>
+  (function() {
+    var w = window;
+    if (w.ChannelIO) {
+      return (window.console.error || window.console.log || function(){})('ChannelIO script included twice.');
+    }
+    var ch = function() {
+      ch.c(arguments);
+    };
+    ch.q = [];
+    ch.c = function(args) {
+      ch.q.push(args);
+    };
+    w.ChannelIO = ch;
+    function l() {
+      if (w.ChannelIOInitialized) {
+        return;
+      }
+      w.ChannelIOInitialized = true;
+      var s = document.createElement('script');
+      s.type = 'text/javascript';
+      s.async = true;
+      s.src = 'https://cdn.channel.io/plugin/ch-plugin-patch.js';
+      s.charset = 'UTF-8';
+      var x = document.getElementsByTagName('script')[0];
+      x.parentNode.insertBefore(s, x);
+    }
+    if (document.readyState === 'complete') {
+      l();
+    } else if (window.attachEvent) {
+      window.attachEvent('onload', l);
+    } else {
+      window.addEventListener('DOMContentLoaded', l, false);
+      window.addEventListener('load', l, false);
+    }
+  })();
+  ChannelIO('boot', {
+    "pluginKey": "{{ . }}"
+  });
+</script>
+{{ end }}
