@@ -6,6 +6,8 @@ A high-performance framework to automatically sync a Notion database into a beau
 - **Notion as CMS**: Write and manage your content entirely in Notion.
 - **R2 Image Hosting**: Automatically downloads Notion images (which expire) and uploads them to Cloudflare R2 for permanent, fast delivery.
 - **Recursive Sync**: Detects internal Notion links and automatically downloads the linked pages to prevent 404 errors.
+- **Dynamic Layouts**: Automatically detects column blocks in Notion and generates native responsive grids (e.g. 2-column, 3-column).
+- **Date Hiding `[no-date]`**: Add `[no-date]` anywhere in your Notion text to seamlessly hide the publish date on the Hugo frontend.
 - **Premium Design**: Built-in Tailwind CSS + Typography with styling inspired by `shadcn/ui`.
 - **SEO & Analytics Ready**: Unified configuration for Google Analytics, Naver, Clarity, and standard SEO meta tags.
 - **Lightning Fast**: Generates static HTML via Hugo.
