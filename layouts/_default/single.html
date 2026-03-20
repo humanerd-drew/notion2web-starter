@@ -1,8 +1,10 @@
 {{ define "main" }}
-<article class="container max-w-3xl py-10 lg:py-16">
+<article class="container max-w-4xl px-4 md:px-6 py-10 lg:py-16">
   <div class="space-y-4">
     <h1 class="inline-block font-heading text-4xl tracking-tight lg:text-5xl">{{ .Title }}</h1>
+    {{ if not .Params.hideDate }}
     <p class="text-sm text-muted-foreground">{{ .Date.Format "January 2, 2006" }}</p>
+    {{ end }}
   </div>
   <hr class="my-8" />
   <div class="prose dark:prose-invert max-w-none">

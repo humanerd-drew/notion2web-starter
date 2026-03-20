@@ -309,9 +309,13 @@ async function blockToMarkdown(block) {
         return `<p class="text-red-500 underline"><a href="${imageUrl}" target="_blank">Image Load Failed</a></p>\n\n`;
       }
     }
-    case 'column_list':
-      return `<div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">${childrenContent}</div>\n\n`;
-    case 'column':
+    case 'column_list': {
+      // Determine actual number of columns from the fetched children
+      const colCount = children ? children.length : 1;
+      // Cap at 12 for standard Tailwind grid
+      const validColCount = Math.min(Math.max(colCount, 1), 12);
+      return `<div class="grid grid-cols-1 md:grid-cols-${validColCount} gap-6 my-8">${childrenContent}</div>\n\n`;
+    }    case 'column':
       return `<div class="flex flex-col space-y-4 w-full h-full">${childrenContent}</div>`;
     case 'link_to_page':
       const targetId = normalizeId(value.page_id);
@@ -420,9 +424,16 @@ async function fetchPageContent(pageId) {
 async function processParentPage(pageId) {
   console.log(`[PASS 2] Writing Parent Page Content: ${pageId}`);
   const title = await getPageTitle(pageId);
-  const content = await fetchPageContent(pageId);
+  let content = await fetchPageContent(pageId);
   
-  const frontmatter = `---\ntitle: "${title}"\nlayout: "single"\n---\n\n`;
+  // Custom Feature: Hide Date
+  let hideDate = false;
+  if (content.includes('[no-date]')) {
+    hideDate = true;
+    content = content.replace(/\[no-date\]/g, '');
+  }
+  
+  const frontmatter = `---\ntitle: "${title}"\nhideDate: ${hideDate}\nlayout: "single"\n---\n\n`;
   if (!fs.existsSync(CONTENT_DIR)) fs.mkdirSync(CONTENT_DIR, { recursive: true });
   const filePath = path.join(CONTENT_DIR, '_index.md');
   fs.writeFileSync(filePath, frontmatter + content);
@@ -459,8 +470,16 @@ async function processDatabase(databaseId) {
     const date = page.created_time;
 
     console.log(`[Writing File] ${title} -> ${slug}.md`);
-    const content = await fetchPageContent(page.id);
-    const frontmatter = `---\ntitle: "${title}"\ndate: ${date}\ndraft: false\n---\n\n`;
+    let content = await fetchPageContent(page.id);
+    
+    // Custom Feature: Hide Date
+    let hideDate = false;
+    if (content.includes('[no-date]')) {
+      hideDate = true;
+      content = content.replace(/\[no-date\]/g, '');
+    }
+    
+    const frontmatter = `---\ntitle: "${title}"\ndate: ${date}\nhideDate: ${hideDate}\ndraft: false\n---\n\n`;
     const filePath = path.join(CONTENT_DIR, `${slug}.md`);
     fs.writeFileSync(filePath, frontmatter + content);
     syncedFilePaths.add(path.resolve(filePath).normalize('NFC'));
@@ -507,8 +526,16 @@ async function processQueue() {
     if (syncedFilePaths.has(path.resolve(filePath).normalize('NFC'))) continue;
 
     console.log(`[Queue Sync] ${title} -> ${slug}.md`);
-    const content = await fetchPageContent(pageId);
-    const frontmatter = `---\ntitle: "${title}"\ndraft: false\n---\n\n`;
+    let content = await fetchPageContent(pageId);
+    
+    // Custom Feature: Hide Date
+    let hideDate = false;
+    if (content.includes('[no-date]')) {
+      hideDate = true;
+      content = content.replace(/\[no-date\]/g, '');
+    }
+    
+    const frontmatter = `---\ntitle: "${title}"\nhideDate: ${hideDate}\ndraft: false\n---\n\n`;
     fs.writeFileSync(filePath, frontmatter + content);
     syncedFilePaths.add(path.resolve(filePath).normalize('NFC'));
   }
