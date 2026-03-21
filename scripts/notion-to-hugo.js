@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const fetch = require('node-fetch');
 const crypto = require('crypto');
+const sharp = require('sharp');
 
 // Initialize clients
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
@@ -52,6 +53,29 @@ async function uploadToR2(buffer, fileName, contentType) {
   }
 }
 
+async function processImageAndUpload(buffer) {
+  try {
+    const hash = getHash(buffer);
+    const fileName = `${hash}.webp`;
+    
+    // Convert to webp
+    const webpBuffer = await sharp(buffer)
+      .webp({ quality: 80 })
+      .toBuffer();
+    
+    // Get dimensions
+    const metadata = await sharp(webpBuffer).metadata();
+    const width = metadata.width;
+    const height = metadata.height;
+
+    const r2Url = await uploadToR2(webpBuffer, fileName, 'image/webp');
+    return { url: r2Url, width, height };
+  } catch (e) {
+    console.error('Image processing failed:', e);
+    return null;
+  }
+}
+
 function getHash(data) {
   return crypto.createHash('md5').update(data).digest('hex');
 }
@@ -61,6 +85,58 @@ const titleToSlugMap = {};
 const syncQueue = new Set();
 const syncedFilePaths = new Set();
 let lastHeadingLink = '';
+
+// --- REFACTORING HELPERS ---
+
+function resolveInternalLink(url) {
+  if (!url) return url;
+  const match = url.match(/notion\.so\/(?:[^/]+\-|)([a-f0-9]{32})/);
+  if (match) {
+    const normId = normalizeId(match[1]);
+    syncQueue.add(normId); // Add to SyncQueue for recursive syncing
+    if (normId === PARENT_PAGE_ID) return '/';
+    if (idToSlugMap[normId]) return `/${idToSlugMap[normId]}/`;
+  }
+  return url;
+}
+
+async function extractCoverUrl(item, normId) {
+  if (item.cover) {
+    const rawUrl = item.cover.external?.url || item.cover.file?.url;
+    if (rawUrl) {
+      try {
+        const imgBuffer = await downloadImage(rawUrl);
+        const processed = await processImageAndUpload(imgBuffer);
+        if (processed) return processed.url;
+      } catch(e) { console.error('Cover (Page) upload failed:', e); }
+    }
+  }
+  try {
+    const blocks = await getBlocks(normId);
+    const firstImgBlock = blocks.find(b => b.type === 'image');
+    if (firstImgBlock) {
+      const rawUrl = firstImgBlock.image.external?.url || firstImgBlock.image.file?.url;
+      if (rawUrl) {
+        const imgBuffer = await downloadImage(rawUrl);
+        const processed = await processImageAndUpload(imgBuffer);
+        if (processed) return processed.url;
+      }
+    }
+  } catch(e) { console.error('Cover (Content) extraction failed:', e); }
+  return '';
+}
+
+function processContentFlags(content) {
+  let hideDate = false;
+  let cleanContent = content;
+  if (cleanContent.includes('[no-date]')) {
+    hideDate = true;
+    cleanContent = cleanContent.replace(/\[no-date\]/g, '');
+  }
+  return { cleanContent, hideDate };
+}
+
+// ---------------------------
 
 function richTextToHtml(richText) {
   if (!richText || !Array.isArray(richText)) return '';
@@ -84,20 +160,7 @@ function richTextToHtml(richText) {
     let url = t.href || t.text?.link?.url;
     if (url) {
       // Internal Link Remapping & Automatic Queueing
-      const notionPageMatch = url.match(/notion\.so\/(?:[^/]+\-|)([a-f0-9]{32})/);
-      if (notionPageMatch) {
-        const pageId = notionPageMatch[1];
-        const normalizedM = normalizeId(pageId);
-        
-        // Add to SyncQueue for recursive syncing
-        syncQueue.add(normalizedM);
-        
-        if (normalizedM === PARENT_PAGE_ID) {
-          url = '/';
-        } else if (idToSlugMap[normalizedM]) {
-          url = `/${idToSlugMap[normalizedM]}/`;
-        }
-      }
+      url = resolveInternalLink(url);
       text = `<a href="${url}" class="text-primary underline underline-offset-4 hover:opacity-80 transition-opacity">${text}</a>`;
     }
     return text;
@@ -128,42 +191,10 @@ async function renderDatabaseInline(dbId) {
       const slug = idToSlugMap[normId] || getSlug(title);
       
       // Cover Image Implementation (Priority: Page Cover > Page Content)
-      let coverUrl = '';
-      if (item.cover) {
-        const rawUrl = item.cover.external?.url || item.cover.file?.url;
-        if (rawUrl) {
-          try {
-            const imgBuffer = await downloadImage(rawUrl);
-            const hash = getHash(imgBuffer);
-            const ext = rawUrl.split('?')[0].split('.').pop() || 'png';
-            coverUrl = await uploadToR2(imgBuffer, `${hash}.${ext}`, `image/${ext}`);
-          } catch(e) {
-            console.error(`Cover (Page) upload failed for ${title}:`, e);
-          }
-        }
-      }
-
-      // If no page cover, look for first image in page content (Fallback)
-      if (!coverUrl) {
-        try {
-          const blocks = await getBlocks(normId);
-          const firstImgBlock = blocks.find(b => b.type === 'image');
-          if (firstImgBlock) {
-            const rawUrl = firstImgBlock.image.external?.url || firstImgBlock.image.file?.url;
-            if (rawUrl) {
-              const imgBuffer = await downloadImage(rawUrl);
-              const hash = getHash(imgBuffer);
-              const ext = rawUrl.split('?')[0].split('.').pop() || 'png';
-              coverUrl = await uploadToR2(imgBuffer, `${hash}.${ext}`, `image/${ext}`);
-            }
-          }
-        } catch(e) {
-          console.error(`Cover (Content) extraction failed for ${title}:`, e);
-        }
-      }
+      const coverUrl = await extractCoverUrl(item, normId);
       
       const imgHtml = coverUrl 
-        ? `<img src="${coverUrl}" class="w-full h-48 object-cover transition-transform group-hover:scale-105" alt="${title}" />`
+        ? `<img src="${coverUrl}" class="w-full h-48 object-cover transition-transform group-hover:scale-105" alt="${title}" loading="lazy" decoding="async" />`
         : `<div class="w-full h-48 bg-muted flex items-center justify-center text-muted-foreground italic">No Cover</div>`;
 
       html += `      <a href="/${slug}/" class="group block border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all">
@@ -274,27 +305,14 @@ async function blockToMarkdown(block) {
       
       try {
         const buffer = await downloadImage(imageUrl);
-        const hash = getHash(buffer);
-        const ext = imageUrl.split('?')[0].split('.').pop() || 'png';
-        const fileName = `${hash}.${ext}`;
-        const r2Url = await uploadToR2(buffer, fileName, `image/${ext}`);
+        const processed = await processImageAndUpload(buffer);
+        if (!processed) throw new Error("Image processing returned null");
+        const { url: r2Url, width, height } = processed;
         
-        const imgHtml = `<img src="${r2Url}" alt="${plainTextCaption || 'Notion Image'}" class="rounded-xl shadow-md w-full h-auto transition-transform hover:scale-[1.01]" />`;
+        const imgHtml = `<img src="${r2Url}" alt="${plainTextCaption || 'Notion Image'}" width="${width}" height="${height}" loading="lazy" decoding="async" class="rounded-xl shadow-md w-full h-auto transition-transform hover:scale-[1.01]" />`;
         
         // [개선] 캡션에서 링크 추출 (노션 API는 이미지 자체 링크 필드를 제공하지 않음)
-        let linkUrl = firstLink;
-        
-        if (linkUrl) {
-          const m = linkUrl.match(/notion\.so\/(?:[^/]+\-|)([a-f0-9]{32})/);
-          if (m) {
-            const normalizedM = normalizeId(m[1]);
-            if (normalizedM === PARENT_PAGE_ID) {
-              linkUrl = '/';
-            } else if (idToSlugMap[normalizedM]) {
-              linkUrl = `/${idToSlugMap[normalizedM]}/`;
-            }
-          }
-        }
+        let linkUrl = resolveInternalLink(firstLink);
         
         const linkHtml = linkUrl ? `<a href="${linkUrl}" class="cursor-pointer block">${imgHtml}</a>` : imgHtml;
         
@@ -427,11 +445,9 @@ async function processParentPage(pageId) {
   let content = await fetchPageContent(pageId);
   
   // Custom Feature: Hide Date
-  let hideDate = false;
-  if (content.includes('[no-date]')) {
-    hideDate = true;
-    content = content.replace(/\[no-date\]/g, '');
-  }
+  const flags = processContentFlags(content);
+  content = flags.cleanContent;
+  let hideDate = flags.hideDate;
   
   const frontmatter = `---\ntitle: "${title}"\nhideDate: ${hideDate}\nlayout: "single"\n---\n\n`;
   if (!fs.existsSync(CONTENT_DIR)) fs.mkdirSync(CONTENT_DIR, { recursive: true });
@@ -472,12 +488,9 @@ async function processDatabase(databaseId) {
     console.log(`[Writing File] ${title} -> ${slug}.md`);
     let content = await fetchPageContent(page.id);
     
-    // Custom Feature: Hide Date
-    let hideDate = false;
-    if (content.includes('[no-date]')) {
-      hideDate = true;
-      content = content.replace(/\[no-date\]/g, '');
-    }
+    const flags = processContentFlags(content);
+    content = flags.cleanContent;
+    let hideDate = flags.hideDate;
     
     const frontmatter = `---\ntitle: "${title}"\ndate: ${date}\nhideDate: ${hideDate}\ndraft: false\n---\n\n`;
     const filePath = path.join(CONTENT_DIR, `${slug}.md`);
@@ -528,12 +541,9 @@ async function processQueue() {
     console.log(`[Queue Sync] ${title} -> ${slug}.md`);
     let content = await fetchPageContent(pageId);
     
-    // Custom Feature: Hide Date
-    let hideDate = false;
-    if (content.includes('[no-date]')) {
-      hideDate = true;
-      content = content.replace(/\[no-date\]/g, '');
-    }
+    const flags = processContentFlags(content);
+    content = flags.cleanContent;
+    let hideDate = flags.hideDate;
     
     const frontmatter = `---\ntitle: "${title}"\nhideDate: ${hideDate}\ndraft: false\n---\n\n`;
     fs.writeFileSync(filePath, frontmatter + content);

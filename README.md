@@ -10,6 +10,7 @@ A high-performance framework to automatically sync a Notion database into a beau
 - **Date Hiding `[no-date]`**: Add `[no-date]` anywhere in your Notion text to seamlessly hide the publish date on the Hugo frontend.
 - **Premium Design**: Built-in Tailwind CSS + Typography with styling inspired by `shadcn/ui`.
 - **SEO & Analytics Ready**: Unified configuration for Google Analytics, Naver, Clarity, and standard SEO meta tags.
+- **Performance Optimized**: Auto-converts images to `WebP`, injects width/height attributes to prevent CLS, minifies CSS, and implements aggressive Cloudflare Pages caching.
 - **Lightning Fast**: Generates static HTML via Hugo.
 
 ## 💡 Custom Features & Formatting

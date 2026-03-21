@@ -7,7 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "hugo": "hugo",
-    "build:css": "npx tailwindcss -i ./assets/css/main.css -o ./static/css/main.css",
+    "build:css": "npx tailwindcss -i ./assets/css/main.css -o ./static/css/main.css --minify",
     "sync": "node scripts/notion-to-hugo.js",
     "build": "npm run build:css && hugo --minify",
     "dev": "npm run sync && npm run build:css && hugo server"
@@ -16,7 +16,8 @@
     "dotenv": "^16.4.5",
     "node-fetch": "^2.7.0",
     "@notionhq/client": "^2.2.15",
-    "@aws-sdk/client-s3": "^3.525.0"
+    "@aws-sdk/client-s3": "^3.525.0",
+    "sharp": "^0.33.2"
   },
   "devDependencies": {
     "hugo-extended": "^0.158.0",
