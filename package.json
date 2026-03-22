@@ -9,7 +9,7 @@
     "hugo": "hugo",
     "build:css": "npx tailwindcss -i ./assets/css/main.css -o ./static/css/main.css --minify",
     "sync": "node scripts/notion-to-hugo.js",
-    "build": "npm run build:css && hugo --minify",
+    "build": "npm run sync && npm run build:css && hugo --minify",
     "dev": "npm run sync && npm run build:css && hugo server"
   },
   "dependencies": {

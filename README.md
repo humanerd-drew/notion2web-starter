@@ -63,12 +63,17 @@ npm run dev
 ```
 > This will execute the sync script (`notion-to-hugo.js`), build the Tailwind CSS, and start the Hugo server.
 
-## ☁️ Deployment (GitHub Actions)
-This template comes with a ready-to-use GitHub Actions workflow (`.github/workflows/deploy.yml`) designed for Cloudflare Pages.
+## ☁️ Deployment (Cloudflare Pages)
+This template is optimized for **Cloudflare Pages**. By integrating Notion sync into the build command, your site remains updated without external CI/CD tools.
 
-1. Go to your repository **Settings > Secrets and variables > Actions**.
-2. Add all the variables from your `.env` file as **Repository Secrets**.
-3. When you push to the `main` branch, the Action will automatically run the sync script, build the site, and you can map the `/public` folder to Cloudflare Pages.
+1. **Connect to GitHub**: Create a new project on your Cloudflare Pages dashboard and connect your repository.
+2. **Build Settings**:
+   - **Framework preset**: `Hugo` (or None)
+   - **Build command**: `npm run build`
+   - **Build output directory**: `public`
+3. **Environment Variables**:
+   In your Pages project settings (**Settings > Functions > Environment variables**), add all the variables from your `.env` file (Notion API keys, R2 credentials, etc.).
+4. **Deploy**: Every time you push to the `main` branch, Cloudflare will automatically sync with Notion, build, and deploy your site.
 
 ## 📄 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
