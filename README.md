@@ -1,82 +1,74 @@
 # Notion2Web Starter
 
-A high-performance framework to automatically sync a Notion database into a beautiful, static Hugo website, complete with Cloudflare R2 image optimization and shadcn/ui inspired styling.
+Notion 데이터베이스를 자동으로 Hugo 정적 사이트로 동기화하는 프레임워크.
+Cloudflare R2 이미지 호스팅 + shadcn/ui 스타일 포함.
 
-## 🌟 Features
-- **Notion as CMS**: Write and manage your content entirely in Notion.
-- **R2 Image Hosting**: Automatically downloads Notion images (which expire) and uploads them to Cloudflare R2 for permanent, fast delivery.
-- **Recursive Sync**: Detects internal Notion links and automatically downloads the linked pages to prevent 404 errors.
-- **Dynamic Layouts**: Automatically detects column blocks in Notion and generates native responsive grids (e.g. 2-column, 3-column).
-- **Date Hiding `[no-date]`**: Add `[no-date]` anywhere in your Notion text to seamlessly hide the publish date on the Hugo frontend.
-- **Premium Design**: Built-in Tailwind CSS + Typography with styling inspired by `shadcn/ui`.
-- **SEO & Analytics Ready**: Unified configuration for Google Analytics, Naver, Clarity, and standard SEO meta tags.
-- **Performance Optimized**: Auto-converts images to `WebP`, injects width/height attributes to prevent CLS, minifies CSS, and implements aggressive Cloudflare Pages caching.
-- **Lightning Fast**: Generates static HTML via Hugo.
+## 주요 기능
 
-## 💡 Custom Features & Formatting
-This starter template provides several powerful ways to control your generated website directly from Notion:
+- **Notion → 정적 사이트**: Notion에서 쓰면 웹사이트에 자동으로 반영
+- **R2 이미지 호스팅**: Notion 이미지(만료됨)를 Cloudflare R2에 영구 저장
+- **재귀 동기화**: 내부 링크，自动으로 연결된 페이지도 다운로드
+- **커스텀 태그**: `[no-date]`로 날짜 숨기기, `[hide]`로 토글 내 콘텐츠 제외
 
-- **Hiding Dates (`[no-date]`)**
-  If you want to hide the publish date of a page (e.g., for 'About' or 'Contact' pages), simply type `[no-date]` anywhere in the Notion page content. The script will automatically remove the text and hide the date from the Hugo layout.
-  
-- **Hidden Blocks (`[hide]`)**
-  If you want to keep notes or draft content in Notion that shouldn't be published to the website, create a **Toggle Block**, name it with `[hide]` (e.g., `[hide] Draft Notes`), and place your content inside. The script will completely ignore this toggle during sync.
+## 빠른 시작 (5단계)
 
-- **Clickable Images**
-  Notion doesn't natively support adding links directly to image blocks. To make an image clickable on your website, add a **Caption** to the image block in Notion, and insert a hyperlink into the caption text. The sync script will automatically wrap the image in an `<a>` tag using that link. If the caption *only* contains the link, the text itself will be hidden for a cleaner look.
-
-- **Dynamic Columns**
-  Simply use Notion's native multi-column layout. The script calculates the actual number of columns (up to 12) and maps them natively to Tailwind CSS grid classes (`grid-cols-2`, `grid-cols-3`, etc.).
-
-- **Smart Linking (Recursive Sync)**
-  When you insert an inline link to another Notion page, or use a `link_to_page` block, the script automatically queues that target page and downloads it into your static site. Internal links are perfectly mapped to Hugo's local routing system.
-
-## 🚀 Getting Started
-
-### 1. Prerequisites
-- **Notion Integration Token**: [Create one here](https://www.notion.so/my-integrations).
-- **Cloudflare R2**: Create a bucket in your Cloudflare dashboard.
-- **Node.js** & **Hugo Extended** (for local development).
-
-### 2. Setup
-1. Click **"Use this template"** on GitHub to create your own repository.
-2. Clone your repository locally.
-3. Run `npm install`.
-
-### 3. Environment Variables
-Copy `.env.example` to `.env` and fill in your credentials:
 ```bash
+# 1. 이 저장소 fork
+# https://github.com/humanerd-drew/notion2web-starter → "Use this template"
+
+# 2. 로컬에 복제
+git clone https://github.com/YOUR_NAME/notion2web-starter.git
+cd notion2web-starter
+
+# 3. 의존성 설치
+npm install
+
+# 4. Hugo 설치 (macOS)
+brew install hugo
+
+# 5. .env.example → .env 복사 후 값 채우기
 cp .env.example .env
 ```
-Make sure you invite your Notion Integration to the Root Page / Database you want to sync!
 
-### 4. Configuration
-Open `hugo.toml` and update:
-- `baseURL` (Your live domain)
-- `title` (Your website name)
-- Analytics tracking IDs inside `[params.analytics]`.
+`.env`에 채워야 할 값 (어디서 구하는지는 [docs/SETUP.md](docs/SETUP.md) 참조):
+- `NOTION_API_KEY`
+- `NOTION_DATABASE_ID`
+- `NOTION_PARENT_PAGE_ID`
+- `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET_NAME`, `R2_ENDPOINT`, `R2_PUBLIC_URL`
+- `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
 
-### 5. Local Development
-To sync data from Notion and run the site locally:
+Notion 페이지/데이터베이스에 integration 연결 필요 (상세: [docs/SETUP.md](docs/SETUP.md))
+
+## 로컬 개발
+
 ```bash
 npm run dev
+# → http://localhost:1313 에서 확인
 ```
-> This will execute the sync script (`notion-to-hugo.js`), build the Tailwind CSS, and start the Hugo server.
 
-## ☁️ Deployment (Cloudflare Pages)
-This template is optimized for **Cloudflare Pages**. By integrating Notion sync into the build command, your site remains updated without external CI/CD tools.
+## 배포 (Cloudflare Pages)
 
-1. **Connect to GitHub**: Create a new project on your Cloudflare Pages dashboard and connect your repository.
-2. **Build Settings**:
-   - **Framework preset**: `Hugo` (or None)
-   - **Build command**: `npm run build`
-   - **Build output directory**: `public`
-3. **Environment Variables**:
-   In your Pages project settings (**Settings > Functions > Environment variables**), add all the variables from your `.env` file (Notion API keys, R2 credentials, etc.).
-4. **Deploy**: Every time you push to the `main` branch, Cloudflare will automatically sync with Notion, build, and deploy your site.
+1. Cloudflare Pages dashboard → GitHub repository 연결
+2. Build settings:
+   - Framework preset: `Hugo`
+   - Build command: `npm run build`
+   - Build output directory: `public`
+3. Environment variables에 위의 10개 값 입력
+4. `main` 브랜치 push하면 자동 배포
 
-## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 문서
+
+- [docs/SETUP.md](docs/SETUP.md) — 상세 설정 가이드 (Secrets 순서, Hugo 설치, Cloudflare 설정)
+- [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md) — Tailwind/CSS, Hugo 템플릿, SEO 커스터마이징
+- [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — 자주 발생하는 문제 해결
+
+## AI에게 물어볼 때
+
+- "notion2web starter 세팅 도와줘" → README 빠른 시작 사용
+- "notion2web R2 설정 방법 알려줘" → docs/SETUP.md 참조
+- "notion2web 이미지 안 보여" → docs/TROUBLESHOOTING.md 참조
 
 ---
+
 *Built with ❤️ from the HUMANERD Project.*
