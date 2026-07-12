@@ -18,6 +18,7 @@ static/css/main.css
 # OS files
 .DS_Store
 Thumbs.db
+@eaDir
 
 # Idea/Editor files
 .vscode/

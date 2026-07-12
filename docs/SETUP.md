@@ -36,7 +36,15 @@
    - Framework preset: `Hugo`
    - Build command: `npm run build`
    - Build output directory: `public`
-5. **Environment variables** 설정 (아래 참조)
+5. **Environment variables** 설정 (아래 GitHub Secrets와 동일)
+
+### 4. Cloudflare Deploy Hook
+
+GitHub Actions가 변경사항을 push한 후 Cloudflare Pages를 재배포하도록 deploy hook 생성:
+
+1. Cloudflare Pages → 프로젝트 → **Settings** → **Deploy hooks**
+2. **"Add deploy hook"** → 이름: `notion-sync`, Branch: `main`
+3. 생성된 URL 복사 → GitHub Secrets에 `CLOUDFLARE_DEPLOY_HOOK`으로 등록
 
 ---
 
@@ -45,6 +53,8 @@
 ### GitHub Secrets (GitHub Actions용)
 
 GitHub repository → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**:
+
+GitHub Actions 워크플로우가 `repository_dispatch` 이벤트를 받으면 아래 Secrets를 사용해 Notion 동기화를 실행합니다.
 
 | Secret Name | 값 |
 |-------------|-----|
@@ -56,13 +66,12 @@ GitHub repository → **Settings** → **Secrets and variables** → **Actions**
 | `R2_BUCKET_NAME` | 생성한 버킷 이름 |
 | `R2_ENDPOINT` | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` |
 | `R2_PUBLIC_URL` | R2 Public URL (https://pub-xxx.r2.dev 형태) |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare Pages용 API Token |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID |
+| `CLOUDFLARE_DEPLOY_HOOK` | Cloudflare Pages → Deploy hooks에서 생성한 URL |
 
 ### Cloudflare Pages Environment Variables
 
-Cloudflare Pages dashboard → 프로젝트 → **Settings** → **Environment variables**:
-동일한 10개 변수를 추가.
+Cloudflare Pages deploy hook 방식으로 배포하므로 Pages 환경변수는 별도로 설정하지 않아도 됩니다.
+단, 로컬 `.env` 파일은 `CLOUDFLARE_DEPLOY_HOOK` 없이 Notion/R2 값만 있으면 됩니다.
 
 ---
 

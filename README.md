@@ -26,36 +26,37 @@ npm install
 # 4. Hugo 설치 (macOS)
 brew install hugo
 
-# 5. .env.example → .env 복사 후 값 채우기
-cp .env.example .env
+# 5. GitHub Actions Secrets 설정 (docs/SETUP.md 참조)
 ```
 
-`.env`에 채워야 할 값 (어디서 구하는지는 [docs/SETUP.md](docs/SETUP.md) 참조):
-- `NOTION_API_KEY`
-- `NOTION_DATABASE_ID`
-- `NOTION_PARENT_PAGE_ID`
-- `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`
-- `R2_BUCKET_NAME`, `R2_ENDPOINT`, `R2_PUBLIC_URL`
-- `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
+GitHub Secrets에 설정할 값:
+| Secret | 출처 |
+|--------|------|
+| `NOTION_API_KEY` | Notion Integration |
+| `NOTION_DATABASE_ID` | Notion DB URL |
+| `NOTION_PARENT_PAGE_ID` | Notion 루트 페이지 ID |
+| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_ENDPOINT`, `R2_PUBLIC_URL` | Cloudflare R2 |
+| `CLOUDFLARE_DEPLOY_HOOK` | Cloudflare Pages → Deploy hooks |
 
-Notion 페이지/데이터베이스에 integration 연결 필요 (상세: [docs/SETUP.md](docs/SETUP.md))
+## 전체 파이프라인
+
+```
+Notion 페이지 수정 → repository_dispatch → GitHub Actions (sync & commit & push) → Cloudflare Deploy Hook → Cloudflare Pages 재배포
+```
+
+GitHub Actions가 Notion API로 페이지를 동기화하고, 변경사항을 commit + push한 뒤 Cloudflare Pages deploy hook을 호출합니다.
 
 ## 로컬 개발
 
 ```bash
+# .env 파일 생성 후
+cp .env.example .env
+# 로컬에서 실행
 npm run dev
 # → http://localhost:1313 에서 확인
 ```
 
-## 배포 (Cloudflare Pages)
-
-1. Cloudflare Pages dashboard → GitHub repository 연결
-2. Build settings:
-   - Framework preset: `Hugo`
-   - Build command: `npm run build`
-   - Build output directory: `public`
-3. Environment variables에 위의 10개 값 입력
-4. `main` 브랜치 push하면 자동 배포
+로컬 개발 시 `.env` 파일이 필요하며, 운영 동기화는 GitHub Actions가 자동 처리합니다.
 
 ## 문서
 

@@ -1,0 +1,73 @@
+name: Fast Sync (Single Page)
+
+on:
+  repository_dispatch:
+    types: [notion_update]
+
+concurrency:
+  group: fast-sync-main
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Sync Single Notion Page
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          NOTION_PARENT_PAGE_ID: ${{ secrets.NOTION_PARENT_PAGE_ID }}
+          HUGO_CONTENT_DIR: content
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          PAGE_ID: ${{ github.event.client_payload.page_id }}
+        run: pnpm run sync:page
+
+      - name: Commit and Push Changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add content/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            echo "HAS_CHANGES=false" >> $GITHUB_ENV
+          else
+            git commit -m "docs: sync notion page ${{ github.event.client_payload.page_id }}"
+            git pull --rebase --autostash
+            git push
+            echo "HAS_CHANGES=true" >> $GITHUB_ENV
+          fi
+
+      - name: Trigger Cloudflare Deploy Hook
+        if: env.HAS_CHANGES == 'true'
+        run: |
+          if [ -n "${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}" ]; then
+            curl -X POST "${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}"
+            echo "Triggered Cloudflare deployment successfully!"
+          else
+            echo "Warning: CLOUDFLARE_DEPLOY_HOOK is not set in GitHub Secrets."
+          fi
