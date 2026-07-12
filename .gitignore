@@ -28,3 +28,4 @@ Thumbs.db
 
 # Hugo temporary files
 .hugo_build.lock
+._*
