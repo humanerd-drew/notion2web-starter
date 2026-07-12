@@ -85,43 +85,48 @@ Cloudflare Pages deploy hook 방식으로 배포하므로 Pages 환경변수는 
 
 ---
 
-## Notion에서 GitHub으로 연결하기 (Notion Automation)
+## Notion에서 GitHub으로 연결하기 (Cloudflare Worker)
 
 GitHub Actions 워크플로우는 `repository_dispatch` 이벤트로 트리거됩니다.
-Notion에서 페이지가 수정될 때 GitHub API를 호출하도록 설정해야 합니다.
+Notion API 웹훅을 받아 GitHub dispatch를 보내는 Cloudflare Worker가 그 역할을 합니다.
 
-### 방법 A: Notion Automation (유료 플랜)
+### 6. Cloudflare Worker 배포
 
-Notion Plus/Team/Enterprise 플랜에서 사용 가능:
+`workers/webhook-bridge/` 폴더에 Worker 소스가 포함되어 있습니다.
 
-1. Notion 페이지 열기 → 우측 상단 **`...`** → **Automations** → **"Add automation"**
-2. Trigger: **"When page is edited"**
-3. Action: **"Send webhook"**
-4. URL:
-   ```
-   https://api.github.com/repos/내계정/notion2web-starter/dispatches
-   ```
-5. **Headers**:
-   - `Authorization`: `Bearer ghp_여기에PAT입력`
-   - `Content-Type`: `application/json`
-6. **Request body**:
-   ```json
-   {
-     "event_type": "notion_update",
-     "client_payload": {
-       "page_id": "{{page_id}}"
-     }
-   }
-   ```
-   (Notion Automation에서 변수 지원 여부에 따라 `page_id` 값은 고정될 수 있습니다.
-   전체 페이지를 다시 동기화하려면 `client_payload`를 생략해도 됩니다)
+1. Cloudflare 대시보드 → **Workers & Pages** → **Create** → **Worker**
+2. Worker 이름: `notion2web-bridge`
+3. `workers/webhook-bridge/src/index.js`의 코드를 Worker 에디터에 붙여넣기
+4. **Settings** → **Variables** → 환경 변수 설정:
 
-### 방법 B: 무료 대안
+   | 변수 | 값 |
+   |------|-----|
+   | `GITHUB_OWNER` | 내 GitHub 아이디 |
+   | `GITHUB_REPO` | `notion2web-starter` |
+   | `GITHUB_EVENT_TYPE` | `notion_update` |
+   | `NOTION_WEBHOOK_SECRET` | 아무 문자열 (랜덤 32자 추천) |
+   | `GITHUB_TOKEN` | 위에서 발급한 PAT (`ghp_...`) |
 
-Notion Automation이 없다면 아래 서비스를 이용할 수 있습니다:
-- **Pipedream** (무료 티어 있음): Notion 웹훅 트리거 → GitHub dispatch 액션
-- **Make.com** (무료 티어 있음): Notion watch 페이지 → HTTP POST dispatch
-- **n8n** (자체 호스팅): Notion 트리거 → GitHub API 호출
+5. **Deploy** 클릭
+6. 배포된 Worker의 URL 복사 (`https://notion2web-bridge.내계정.workers.dev`)
+
+### 7. Notion에 웹훅 등록하기
+
+Notion API 웹훅은 `curl` 또는 REST 클라이언트로 등록합니다:
+
+```bash
+curl -X POST https://api.notion.com/v1/webhooks \
+  -H "Authorization: Bearer {NOTION_API_KEY}" \
+  -H "Notion-Version: 2022-06-28" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://notion2web-bridge.내계정.workers.dev",
+    "events": ["page_updated", "page_created"],
+    "secret": "여기에NOTION_WEBHOOK_SECRET과동일한값입력"
+  }'
+```
+
+또는 Notion Integration 설정 페이지에서 설정 가능합니다.
 
 ---
 

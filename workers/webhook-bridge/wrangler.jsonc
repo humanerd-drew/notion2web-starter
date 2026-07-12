@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "notion2web-bridge",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-01",
+  "vars": {
+    "GITHUB_OWNER": "your_github_username",
+    "GITHUB_REPO": "notion2web-starter",
+    "GITHUB_EVENT_TYPE": "notion_update"
+  },
+  "secrets": {
+    "NOTION_WEBHOOK_SECRET": "your_webhook_secret_here",
+    "GITHUB_TOKEN": "your_github_pat_here"
+  }
+}
