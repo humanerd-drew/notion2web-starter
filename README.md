@@ -35,16 +35,25 @@ Cloudflare 대시보드 → **Pages** → 프로젝트 생성 → GitHub 저장�
 Cloudflare Pages → 프로젝트 설정 → **Deploy hooks** → "Add deploy hook" → URL 복사
 ([자세한 방법](docs/SETUP.md#4-cloudflare-deploy-hook))
 
-### 5단계. Notion API 키 발급
+### 5단계. GitHub Personal Access Token 발급
+[github.com/settings/tokens](https://github.com/settings/tokens) → **Generate new token** → `repo` 권한 체크 → 토큰 복사
+([자세한 방법](docs/SETUP.md#5-github-personal-access-token))
+
+### 6단계. Notion API 키 발급
 [notion.so/my-integrations](https://www.notion.so/my-integrations) → 새 Integration 만들기 → 토큰 복사
 ([자세한 방법](docs/SETUP.md#1-notion-integration-token))
 
-### 6단계. GitHub에 비밀값 등록하기
+### 7단계. GitHub에 비밀값 등록하기
 GitHub 저장소 → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 위에서 만든 키와 토큰 9개를 하나씩 등록합니다.
 ([자세한 방법](docs/SETUP.md#github-secrets-github-actions용))
 
-### 7단계. Notion 페이지에 연결하기
+### 8단계. Notion Automation으로 GitHub 연결하기
+Notion에서 페이지가 수정될 때 GitHub에 알림을 보내야 합니다.
+Notion Automation(유료)이나 무료 대안(Pipedream, Make)으로 `POST /repos/.../dispatches` API를 호출하도록 설정합니다.
+([자세한 방법](docs/SETUP.md#8-notion에서-github으로-연결하기-notion-automation))
+
+### 9단계. Notion 페이지에 Integration 연결하기
 Notion에서 동기화할 페이지 열기 → 우측 상단 **`...`** → **"Add connections"** → 방금 만든 Integration 선택
 
 ### ✅ 완료
